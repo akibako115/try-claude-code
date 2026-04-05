@@ -12,6 +12,7 @@ from fastapi.templating import Jinja2Templates
 
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / "papers.db"
+LATEST_SCHEMA_VERSION = 2
 
 app = FastAPI(title="Paper Notes")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
@@ -27,29 +28,103 @@ def get_connection() -> sqlite3.Connection:
     return connection
 
 
+def table_exists(connection: sqlite3.Connection, table_name: str) -> bool:
+    row = connection.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+        (table_name,),
+    ).fetchone()
+    return row is not None
+
+
+def get_table_columns(connection: sqlite3.Connection, table_name: str) -> set[str]:
+    return {
+        row[1]
+        for row in connection.execute(f"PRAGMA table_info({table_name})").fetchall()
+    }
+
+
+def create_papers_table_v1(connection: sqlite3.Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS papers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            authors TEXT NOT NULL DEFAULT '',
+            url TEXT NOT NULL DEFAULT '',
+            memo TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )
+        """
+    )
+
+
+def infer_schema_version(connection: sqlite3.Connection) -> int:
+    if not table_exists(connection, "papers"):
+        return 0
+
+    existing_columns = get_table_columns(connection, "papers")
+    if "tags" in existing_columns:
+        return 2
+    return 1
+
+
+def ensure_schema_version_table(connection: sqlite3.Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS schema_version (
+            version INTEGER NOT NULL
+        )
+        """
+    )
+    row = connection.execute("SELECT version FROM schema_version").fetchone()
+    if row is None:
+        connection.execute(
+            "INSERT INTO schema_version (version) VALUES (?)",
+            (infer_schema_version(connection),),
+        )
+
+
+def get_schema_version(connection: sqlite3.Connection) -> int:
+    row = connection.execute("SELECT version FROM schema_version").fetchone()
+    if row is None:
+        raise RuntimeError("schema_version table is not initialized")
+    return int(row[0])
+
+
+def set_schema_version(connection: sqlite3.Connection, version: int) -> None:
+    connection.execute("UPDATE schema_version SET version = ?", (version,))
+
+
+def migrate_to_v2(connection: sqlite3.Connection) -> None:
+    if "tags" not in get_table_columns(connection, "papers"):
+        connection.execute("ALTER TABLE papers ADD COLUMN tags TEXT NOT NULL DEFAULT ''")
+
+
+def run_migrations(connection: sqlite3.Connection) -> None:
+    ensure_schema_version_table(connection)
+
+    while True:
+        version = get_schema_version(connection)
+        if version >= LATEST_SCHEMA_VERSION:
+            return
+
+        if version == 0:
+            create_papers_table_v1(connection)
+            set_schema_version(connection, 1)
+            continue
+
+        if version == 1:
+            migrate_to_v2(connection)
+            set_schema_version(connection, 2)
+            continue
+
+        raise RuntimeError(f"Unsupported schema version: {version}")
+
+
 def init_db() -> None:
     with get_connection() as connection:
-        connection.execute(
-            """
-            CREATE TABLE IF NOT EXISTS papers (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                title TEXT NOT NULL,
-                authors TEXT NOT NULL DEFAULT '',
-                url TEXT NOT NULL DEFAULT '',
-                memo TEXT NOT NULL DEFAULT '',
-                tags TEXT NOT NULL DEFAULT '',
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
-            )
-            """
-        )
-        # 既存DBへのマイグレーション: tagsカラムが無ければ追加
-        existing_columns = {
-            row[1]
-            for row in connection.execute("PRAGMA table_info(papers)").fetchall()
-        }
-        if "tags" not in existing_columns:
-            connection.execute("ALTER TABLE papers ADD COLUMN tags TEXT NOT NULL DEFAULT ''")
+        run_migrations(connection)
         connection.commit()
 
 
@@ -236,7 +311,7 @@ def save_memo(request: Request, paper_id: int, memo: str = Form("")) -> HTMLResp
     return templates.TemplateResponse(
         request,
         "partials/paper_item.html",
-        {"paper": paper, "saved": True},
+        {"paper": paper, "saved_memo": True, "saved_tags": False},
     )
 
 
@@ -246,7 +321,7 @@ def save_tags(request: Request, paper_id: int, tags: str = Form("")) -> HTMLResp
     return templates.TemplateResponse(
         request,
         "partials/paper_item.html",
-        {"paper": paper, "saved": True},
+        {"paper": paper, "saved_memo": False, "saved_tags": True},
     )
 
 

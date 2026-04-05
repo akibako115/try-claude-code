@@ -40,7 +40,7 @@
       <textarea name="memo">{{ paper.memo }}</textarea>
     </label>
     <div class="paper-actions">
-      {% if saved %}
+      {% if saved_memo %}
       <p class="saved-note">保存しました。</p>
       {% endif %}
       <button class="secondary" type="submit">メモを保存</button>
@@ -60,6 +60,9 @@
       <input type="text" name="tags" value="{{ paper.tags }}" placeholder="機械学習, NLP" />
     </label>
     <div class="paper-actions">
+      {% if saved_tags %}
+      <p class="saved-note">保存しました。</p>
+      {% endif %}
       <button class="secondary" type="submit">タグを保存</button>
       <button
         class="danger"
