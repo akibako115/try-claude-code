@@ -1,0 +1,48 @@
+<article class="paper-card" id="paper-{{ paper.id }}">
+  <div class="paper-header">
+    <div>
+      <h3 class="paper-title">{{ paper.title }}</h3>
+      {% if paper.authors %}
+      <p class="meta">著者: {{ paper.authors }}</p>
+      {% endif %}
+      {% if paper.url %}
+      <p class="meta">
+        URL:
+        <a href="{{ paper.url }}" target="_blank" rel="noreferrer">{{ paper.url }}</a>
+      </p>
+      {% endif %}
+      <p class="meta">追加日時: {{ paper.created_at }}</p>
+      <p class="meta">更新日時: {{ paper.updated_at }}</p>
+    </div>
+  </div>
+
+  <form
+    class="paper-form"
+    method="post"
+    action="/papers/{{ paper.id }}/memo"
+    hx-post="/papers/{{ paper.id }}/memo"
+    hx-target="#paper-{{ paper.id }}"
+    hx-swap="outerHTML"
+  >
+    <label>
+      メモ
+      <textarea name="memo">{{ paper.memo }}</textarea>
+    </label>
+    <div class="paper-actions">
+      {% if saved %}
+      <p class="saved-note">メモを保存しました。</p>
+      {% endif %}
+      <button class="secondary" type="submit">メモを保存</button>
+      <button
+        class="danger"
+        type="button"
+        hx-post="/papers/{{ paper.id }}/delete"
+        hx-target="#paper-{{ paper.id }}"
+        hx-swap="outerHTML"
+        hx-confirm="この論文を削除しますか？"
+      >
+        削除
+      </button>
+    </div>
+  </form>
+</article>

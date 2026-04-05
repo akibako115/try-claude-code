@@ -1,0 +1,49 @@
+<main id="page">
+  <section class="hero">
+    <h1>Paper Notes</h1>
+    <p class="subtitle">読んだ論文を、最小限の情報だけで手早く残すためのローカルアプリです。</p>
+  </section>
+
+  <section class="panel">
+    <h2>論文を追加</h2>
+    {% if error %}
+    <p class="error">{{ error }}</p>
+    {% endif %}
+    <form method="post" action="/papers" hx-post="/papers" hx-target="#page" hx-swap="outerHTML">
+      <div class="grid">
+        <label>
+          タイトル
+          <input type="text" name="title" value="{{ form_data.title }}" required />
+        </label>
+        <label>
+          著者
+          <input type="text" name="authors" value="{{ form_data.authors }}" />
+        </label>
+        <label>
+          URL
+          <input type="url" name="url" value="{{ form_data.url }}" />
+        </label>
+      </div>
+      <label style="margin-top: 12px;">
+        メモ
+        <textarea name="memo">{{ form_data.memo }}</textarea>
+      </label>
+      <div class="actions">
+        <button class="primary" type="submit">保存する</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="panel">
+    <h2>論文一覧</h2>
+    <div class="papers">
+      {% if papers %}
+        {% for paper in papers %}
+          {% include "partials/paper_item.html" %}
+        {% endfor %}
+      {% else %}
+      <p class="empty">まだ論文がありません。上のフォームから追加してください。</p>
+      {% endif %}
+    </div>
+  </section>
+</main>
