@@ -1,5 +1,17 @@
+# Python
 __pycache__/
 *.py[cod]
-.DS_Store
+*.pyo
+*.pyd
 .venv/
+
+# Database
 papers.db
+
+# Claude Code
+.claude/settings.local.json
+.claude/agents/
+claude-agents/
+
+# macOS
+.DS_Store
