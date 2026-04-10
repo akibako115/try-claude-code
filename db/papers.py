@@ -100,6 +100,24 @@ def update_paper_memo(paper_id: int, memo: str) -> dict[str, Any]:
     return get_paper(paper_id)
 
 
+def update_paper_summary(paper_id: int, summary: str) -> dict[str, Any]:
+    """論文の自動要約を更新する。"""
+    timestamp = utc_now_iso()
+    with get_connection() as connection:
+        cursor = connection.execute(
+            """
+            UPDATE papers
+            SET summary = ?, updated_at = ?
+            WHERE id = ?
+            """,
+            (summary, timestamp, paper_id),
+        )
+        connection.commit()
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Paper not found")
+    return get_paper(paper_id)
+
+
 def update_paper_tags(paper_id: int, tags: str) -> dict[str, Any]:
     """論文のタグを更新する。"""
     timestamp = utc_now_iso()
