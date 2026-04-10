@@ -12,6 +12,7 @@ from db.papers import (
     update_paper_memo,
     update_paper_tags,
 )
+from services.memo import generate_memo
 
 router = APIRouter()
 templates: Jinja2Templates
@@ -75,6 +76,11 @@ def create_paper(
                 "form_data": form_data,
             },
             status_code=422,
+        )
+
+    if not form_data["memo"]:
+        form_data["memo"] = generate_memo(
+            form_data["title"], form_data["authors"], form_data["url"]
         )
 
     create_paper_record(**form_data)
