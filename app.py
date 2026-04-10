@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from db import init_db
@@ -11,6 +12,7 @@ from routers import papers as papers_router
 BASE_DIR = Path(__file__).resolve().parent
 
 app = FastAPI(title="Paper Notes")
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
 _templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 papers_router.set_templates(_templates)
