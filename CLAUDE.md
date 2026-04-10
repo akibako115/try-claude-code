@@ -12,7 +12,11 @@ This repository contains a small local web app for tracking papers you have read
 
 ## Files
 
-- `app.py`: FastAPI app, routes, and SQLite access
+- `app.py`: エントリポイント。FastAPIインスタンス生成・ルーター登録・startup hookのみ
+- `db/connection.py`: `get_connection()`, `utc_now_iso()`, `DB_PATH`, `BASE_DIR`
+- `db/migrations.py`: スキーマバージョン管理・マイグレーション処理、`init_db()`
+- `db/papers.py`: papers テーブルの CRUD 操作（`list_papers`, `create_paper_record`, `get_paper`, `update_paper_memo`, `update_paper_tags`, `delete_paper_record`, `normalize_tags`, `list_all_tags`）
+- `routers/papers.py`: FastAPI ルートハンドラ一式
 - `templates/index.html`: outer HTML shell; includes `partials/page_content.html`
 - `templates/partials/page_content.html`: full page body (add-paper form + paper list); htmx target `#page`
 - `templates/partials/paper_item.html`: single paper card; htmx target `#paper-{{ paper.id }}`
