@@ -9,26 +9,31 @@ from fastapi import FastAPI, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
-
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / "papers.db"
 LATEST_SCHEMA_VERSION = 2
 
+# FastAPI アプリのインスタンスを作成
 app = FastAPI(title="Paper Notes")
+
+# Jinja2 テンプレートのディレクトリを設定
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
 def utc_now_iso() -> str:
+    """現在の UTC 時刻を ISO-8601 形式の文字列で返す。"""
     return datetime.now(timezone.utc).isoformat()
 
 
 def get_connection() -> sqlite3.Connection:
+    """SQLite データベースに接続し、行ファクトリを設定して返す。"""
     connection = sqlite3.connect(DB_PATH)
     connection.row_factory = sqlite3.Row
     return connection
 
 
 def table_exists(connection: sqlite3.Connection, table_name: str) -> bool:
+    """テーブルが存在するかどうかを確認する。"""
     row = connection.execute(
         "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
         (table_name,),
@@ -37,6 +42,7 @@ def table_exists(connection: sqlite3.Connection, table_name: str) -> bool:
 
 
 def get_table_columns(connection: sqlite3.Connection, table_name: str) -> set[str]:
+    """テーブルのカラムを取得する。"""
     return {
         row[1]
         for row in connection.execute(f"PRAGMA table_info({table_name})").fetchall()
@@ -44,6 +50,7 @@ def get_table_columns(connection: sqlite3.Connection, table_name: str) -> set[st
 
 
 def create_papers_table_v1(connection: sqlite3.Connection) -> None:
+    """papers テーブルを作成する。"""
     connection.execute(
         """
         CREATE TABLE IF NOT EXISTS papers (
@@ -60,6 +67,7 @@ def create_papers_table_v1(connection: sqlite3.Connection) -> None:
 
 
 def infer_schema_version(connection: sqlite3.Connection) -> int:
+    """スキーマのバージョンを推測する。"""
     if not table_exists(connection, "papers"):
         return 0
 
@@ -70,6 +78,7 @@ def infer_schema_version(connection: sqlite3.Connection) -> int:
 
 
 def ensure_schema_version_table(connection: sqlite3.Connection) -> None:
+    """スキーマのバージョンテーブルを作成する。"""
     connection.execute(
         """
         CREATE TABLE IF NOT EXISTS schema_version (
@@ -86,6 +95,7 @@ def ensure_schema_version_table(connection: sqlite3.Connection) -> None:
 
 
 def get_schema_version(connection: sqlite3.Connection) -> int:
+    """スキーマのバージョンを取得する。"""
     row = connection.execute("SELECT version FROM schema_version").fetchone()
     if row is None:
         raise RuntimeError("schema_version table is not initialized")
@@ -93,15 +103,20 @@ def get_schema_version(connection: sqlite3.Connection) -> int:
 
 
 def set_schema_version(connection: sqlite3.Connection, version: int) -> None:
+    """スキーマのバージョンを設定する。"""
     connection.execute("UPDATE schema_version SET version = ?", (version,))
 
 
 def migrate_to_v2(connection: sqlite3.Connection) -> None:
+    """スキーマを v2 に移行する。"""
     if "tags" not in get_table_columns(connection, "papers"):
-        connection.execute("ALTER TABLE papers ADD COLUMN tags TEXT NOT NULL DEFAULT ''")
+        connection.execute(
+            "ALTER TABLE papers ADD COLUMN tags TEXT NOT NULL DEFAULT ''"
+        )
 
 
 def run_migrations(connection: sqlite3.Connection) -> None:
+    """マイグレーションを実行する。"""
     ensure_schema_version_table(connection)
 
     while True:
@@ -123,6 +138,7 @@ def run_migrations(connection: sqlite3.Connection) -> None:
 
 
 def init_db() -> None:
+    """データベースを初期化する。"""
     with get_connection() as connection:
         run_migrations(connection)
         connection.commit()
@@ -134,6 +150,7 @@ def normalize_tags(tags_str: str) -> str:
 
 
 def list_papers(tag: str = "") -> list[dict[str, Any]]:
+    """論文をリストアップする。"""
     with get_connection() as connection:
         if tag:
             rows = connection.execute(
@@ -169,7 +186,10 @@ def list_all_tags() -> list[str]:
     return sorted(tag_set)
 
 
-def create_paper_record(title: str, authors: str, url: str, memo: str, tags: str) -> int:
+def create_paper_record(
+    title: str, authors: str, url: str, memo: str, tags: str
+) -> int:
+    """論文を作成する。"""
     timestamp = utc_now_iso()
     with get_connection() as connection:
         cursor = connection.execute(
@@ -184,6 +204,7 @@ def create_paper_record(title: str, authors: str, url: str, memo: str, tags: str
 
 
 def get_paper(paper_id: int) -> dict[str, Any]:
+    """論文を取得する。"""
     with get_connection() as connection:
         row = connection.execute(
             """
@@ -199,6 +220,7 @@ def get_paper(paper_id: int) -> dict[str, Any]:
 
 
 def update_paper_memo(paper_id: int, memo: str) -> dict[str, Any]:
+    """論文のメモを更新する。"""
     timestamp = utc_now_iso()
     with get_connection() as connection:
         cursor = connection.execute(
@@ -216,6 +238,7 @@ def update_paper_memo(paper_id: int, memo: str) -> dict[str, Any]:
 
 
 def update_paper_tags(paper_id: int, tags: str) -> dict[str, Any]:
+    """論文のタグを更新する。"""
     timestamp = utc_now_iso()
     with get_connection() as connection:
         cursor = connection.execute(
@@ -233,6 +256,7 @@ def update_paper_tags(paper_id: int, tags: str) -> dict[str, Any]:
 
 
 def delete_paper_record(paper_id: int) -> None:
+    """論文を削除する。"""
     with get_connection() as connection:
         cursor = connection.execute("DELETE FROM papers WHERE id = ?", (paper_id,))
         connection.commit()
@@ -242,11 +266,20 @@ def delete_paper_record(paper_id: int) -> None:
 
 @app.on_event("startup")
 def on_startup() -> None:
+    """アプリケーション起動時にデータベースを初期化する。"""
     init_db()
 
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request, tag: str = Query("")) -> HTMLResponse:
+    """トップページを表示する。
+
+    Args:
+        request: リクエストオブジェクト
+        tag: タグ
+    Returns:
+        HTMLResponse: トップページ
+    """
     return templates.TemplateResponse(
         request,
         "index.html",
@@ -255,7 +288,13 @@ def index(request: Request, tag: str = Query("")) -> HTMLResponse:
             "all_tags": list_all_tags(),
             "active_tag": tag,
             "error": "",
-            "form_data": {"title": "", "authors": "", "url": "", "memo": "", "tags": ""},
+            "form_data": {
+                "title": "",
+                "authors": "",
+                "url": "",
+                "memo": "",
+                "tags": "",
+            },
         },
     )
 
@@ -269,6 +308,18 @@ def create_paper(
     memo: str = Form(""),
     tags: str = Form(""),
 ) -> HTMLResponse:
+    """論文を作成する。
+
+    Args:
+        request: リクエストオブジェクト
+        title: タイトル
+        authors: 著者
+        url: URL
+        memo: メモ
+        tags: タグ
+    Returns:
+        HTMLResponse: 論文を作成したページ
+    """
     clean_title = title.strip()
     form_data = {
         "title": clean_title,
@@ -300,13 +351,28 @@ def create_paper(
             "all_tags": list_all_tags(),
             "active_tag": "",
             "error": "",
-            "form_data": {"title": "", "authors": "", "url": "", "memo": "", "tags": ""},
+            "form_data": {
+                "title": "",
+                "authors": "",
+                "url": "",
+                "memo": "",
+                "tags": "",
+            },
         },
     )
 
 
 @app.post("/papers/{paper_id}/memo", response_class=HTMLResponse)
 def save_memo(request: Request, paper_id: int, memo: str = Form("")) -> HTMLResponse:
+    """論文のメモを保存する。
+
+    Args:
+        request: リクエストオブジェクト
+        paper_id: 論文のID
+        memo: メモ
+    Returns:
+        HTMLResponse: メモを保存した論文の詳細ページ
+    """
     paper = update_paper_memo(paper_id, memo.strip())
     return templates.TemplateResponse(
         request,
@@ -317,6 +383,15 @@ def save_memo(request: Request, paper_id: int, memo: str = Form("")) -> HTMLResp
 
 @app.post("/papers/{paper_id}/tags", response_class=HTMLResponse)
 def save_tags(request: Request, paper_id: int, tags: str = Form("")) -> HTMLResponse:
+    """論文のタグを保存する。
+
+    Args:
+        request: リクエストオブジェクト
+        paper_id: 論文のID
+        tags: タグ
+    Returns:
+        HTMLResponse: タグを保存した論文の詳細ページ
+    """
     paper = update_paper_tags(paper_id, tags.strip())
     return templates.TemplateResponse(
         request,
@@ -327,5 +402,13 @@ def save_tags(request: Request, paper_id: int, tags: str = Form("")) -> HTMLResp
 
 @app.post("/papers/{paper_id}/delete", response_class=HTMLResponse)
 def delete_paper(request: Request, paper_id: int) -> HTMLResponse:
+    """論文を削除する。
+
+    Args:
+        request: リクエストオブジェクト
+        paper_id: 論文のID
+    Returns:
+        HTMLResponse: 論文を削除したページ
+    """
     delete_paper_record(paper_id)
     return HTMLResponse("")
