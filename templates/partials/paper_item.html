@@ -50,26 +50,6 @@
   <form
     class="paper-form"
     method="post"
-    action="/papers/{{ paper.id }}/summary"
-    hx-post="/papers/{{ paper.id }}/summary"
-    hx-target="#paper-{{ paper.id }}"
-    hx-swap="outerHTML"
-  >
-    <label>
-      要約
-      <textarea name="summary">{{ paper.summary }}</textarea>
-    </label>
-    <div class="paper-actions">
-      {% if saved_summary %}
-      <p class="saved-note">保存しました。</p>
-      {% endif %}
-      <button class="secondary" type="submit">要約を保存</button>
-    </div>
-  </form>
-
-  <form
-    class="paper-form"
-    method="post"
     action="/papers/{{ paper.id }}/tags"
     hx-post="/papers/{{ paper.id }}/tags"
     hx-target="#paper-{{ paper.id }}"

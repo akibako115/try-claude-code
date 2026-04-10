@@ -10,7 +10,6 @@ from db.papers import (
     list_all_tags,
     list_papers,
     update_paper_memo,
-    update_paper_summary,
     update_paper_tags,
 )
 from services.memo import generate_memo
@@ -81,8 +80,12 @@ def create_paper(
             status_code=422,
         )
 
-    summary = generate_memo(form_data["title"], form_data["authors"], form_data["url"]) if auto_summary else ""
-    create_paper_record(**form_data, summary=summary)
+    if auto_summary and not form_data["memo"]:
+        form_data["memo"] = generate_memo(
+            form_data["title"], form_data["authors"], form_data["url"]
+        )
+
+    create_paper_record(**form_data)
     return templates.TemplateResponse(
         request,
         "partials/page_content.html",
@@ -110,18 +113,7 @@ def save_memo(request: Request, paper_id: int, memo: str = Form("")) -> HTMLResp
     return templates.TemplateResponse(
         request,
         "partials/paper_item.html",
-        {"paper": paper, "saved_memo": True, "saved_summary": False, "saved_tags": False},
-    )
-
-
-@router.post("/papers/{paper_id}/summary", response_class=HTMLResponse)
-def save_summary(request: Request, paper_id: int, summary: str = Form("")) -> HTMLResponse:
-    """論文の自動要約を保存する。"""
-    paper = update_paper_summary(paper_id, summary.strip())
-    return templates.TemplateResponse(
-        request,
-        "partials/paper_item.html",
-        {"paper": paper, "saved_memo": False, "saved_summary": True, "saved_tags": False},
+        {"paper": paper, "saved_memo": True, "saved_tags": False},
     )
 
 
@@ -132,7 +124,7 @@ def save_tags(request: Request, paper_id: int, tags: str = Form("")) -> HTMLResp
     return templates.TemplateResponse(
         request,
         "partials/paper_item.html",
-        {"paper": paper, "saved_memo": False, "saved_summary": False, "saved_tags": True},
+        {"paper": paper, "saved_memo": False, "saved_tags": True},
     )
 
 
