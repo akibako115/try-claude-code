@@ -1,0 +1,31 @@
+name: Claude Agent Review & Fix
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+jobs:
+  claude-fix:
+    if: contains(github.event.comment.body, '@claude')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Claude Code Action
+        uses: anthropics/claude-code-action@v1
+        with:
+          github_token: ${{ secrets.GH_PAT }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # 指示内容：コメントを読み、修正してプッシュまで実行させる
+          prompt: |
+            PRコメントの内容を解析し、必要ならコードを修正してください。
+            修正後は `git commit` し、現在のブランチに `git push` してください。
+            最後に、修正内容をPRにコメントで報告してください。
