@@ -23,6 +23,10 @@
           URL
           <input type="url" name="url" value="{{ form_data.url }}" />
         </label>
+        <label>
+          タグ（カンマ区切り）
+          <input type="text" name="tags" value="{{ form_data.tags }}" placeholder="機械学習, NLP" />
+        </label>
       </div>
       <label style="margin-top: 12px;">
         メモ
@@ -36,13 +40,50 @@
 
   <section class="panel">
     <h2>論文一覧</h2>
+
+    {% if all_tags %}
+    <div class="tag-filter">
+      <span class="tag-filter-label">タグで絞り込み:</span>
+      {% for t in all_tags %}
+      <a
+        class="tag{% if t == active_tag %} tag-active{% endif %}"
+        href="/?tag={{ t }}"
+        hx-get="/?tag={{ t }}"
+        hx-target="#page"
+        hx-swap="outerHTML"
+        hx-push-url="true"
+      >{{ t }}</a>
+      {% endfor %}
+      {% if active_tag %}
+      <a
+        class="tag tag-clear"
+        href="/"
+        hx-get="/"
+        hx-target="#page"
+        hx-swap="outerHTML"
+        hx-push-url="true"
+      >✕ 絞り込み解除</a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if active_tag %}
+    <p class="filter-info">「{{ active_tag }}」で絞り込み中 — {{ papers | length }} 件</p>
+    {% endif %}
+
     <div class="papers">
       {% if papers %}
         {% for paper in papers %}
           {% include "partials/paper_item.html" %}
         {% endfor %}
       {% else %}
-      <p class="empty">まだ論文がありません。上のフォームから追加してください。</p>
+      <p class="empty">
+        {% if active_tag %}
+        「{{ active_tag }}」タグの論文はありません。
+        {% else %}
+        まだ論文がありません。上のフォームから追加してください。
+        {% endif %}
+      </p>
       {% endif %}
     </div>
   </section>

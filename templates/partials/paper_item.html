@@ -11,6 +11,17 @@
         <a href="{{ paper.url }}" target="_blank" rel="noreferrer">{{ paper.url }}</a>
       </p>
       {% endif %}
+      {% if paper.tags %}
+      <p class="meta tags-list">
+        タグ:
+        {% for tag in paper.tags.split(',') %}
+          {% set t = tag.strip() %}
+          {% if t %}
+          <a class="tag" href="/?tag={{ t }}" hx-get="/?tag={{ t }}" hx-target="#page" hx-swap="outerHTML" hx-push-url="true">{{ t }}</a>
+          {% endif %}
+        {% endfor %}
+      </p>
+      {% endif %}
       <p class="meta">追加日時: {{ paper.created_at }}</p>
       <p class="meta">更新日時: {{ paper.updated_at }}</p>
     </div>
@@ -29,10 +40,30 @@
       <textarea name="memo">{{ paper.memo }}</textarea>
     </label>
     <div class="paper-actions">
-      {% if saved %}
-      <p class="saved-note">メモを保存しました。</p>
+      {% if saved_memo %}
+      <p class="saved-note">保存しました。</p>
       {% endif %}
       <button class="secondary" type="submit">メモを保存</button>
+    </div>
+  </form>
+
+  <form
+    class="paper-form"
+    method="post"
+    action="/papers/{{ paper.id }}/tags"
+    hx-post="/papers/{{ paper.id }}/tags"
+    hx-target="#paper-{{ paper.id }}"
+    hx-swap="outerHTML"
+  >
+    <label>
+      タグ（カンマ区切り）
+      <input type="text" name="tags" value="{{ paper.tags }}" placeholder="機械学習, NLP" />
+    </label>
+    <div class="paper-actions">
+      {% if saved_tags %}
+      <p class="saved-note">保存しました。</p>
+      {% endif %}
+      <button class="secondary" type="submit">タグを保存</button>
       <button
         class="danger"
         type="button"
