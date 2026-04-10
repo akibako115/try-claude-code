@@ -18,12 +18,14 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GH_PAT }}
+          path: '.'
 
       - name: Claude Code Action
         uses: anthropics/claude-code-action@v1
         with:
           github_token: ${{ secrets.GH_PAT }}
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          show_full_output: true
           # 指示内容：コメントを読み、修正してプッシュまで実行させる
           prompt: |
             あなたはPRレビューコメントに基づいてコードを修正するエージェントです。
