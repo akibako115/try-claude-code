@@ -85,7 +85,8 @@
 
       textarea {
         min-height: 120px;
-        resize: vertical;
+        resize: none;
+        overflow: hidden;
       }
 
       .actions {
@@ -234,5 +235,24 @@
   </head>
   <body>
     {% include "partials/page_content.html" %}
+    <script>
+      function autoResize(el) {
+        el.style.height = 'auto';
+        el.style.height = el.scrollHeight + 'px';
+      }
+
+      function initTextareas(root) {
+        root.querySelectorAll('textarea').forEach(function(el) {
+          autoResize(el);
+          el.addEventListener('input', function() { autoResize(el); });
+        });
+      }
+
+      initTextareas(document);
+
+      document.addEventListener('htmx:afterSettle', function(e) {
+        initTextareas(e.detail.elt);
+      });
+    </script>
   </body>
 </html>
