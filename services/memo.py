@@ -48,13 +48,17 @@ def generate_memo(title: str, authors: str, url: str) -> str:
     if url:
         user_message += f"\nURL: {url}"
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": _SYSTEM_PROMPT},
-            {"role": "user", "content": user_message},
-        ],
-        max_tokens=1200,
-        temperature=0.3,
-    )
-    return response.choices[0].message.content or ""
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": _SYSTEM_PROMPT},
+                {"role": "user", "content": user_message},
+            ],
+            max_tokens=2000,
+            temperature=0.3,
+            timeout=30,
+        )
+        return response.choices[0].message.content or ""
+    except Exception:
+        return ""
