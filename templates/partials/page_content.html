@@ -32,10 +32,10 @@
         メモ
         <textarea name="memo">{{ form_data.memo }}</textarea>
       </label>
-      <label style="margin-top: 12px; flex-direction: row; align-items: center; gap: 8px;">
+      <div style="margin-top: 12px; display: flex; align-items: center; gap: 8px;">
         <input type="checkbox" name="auto_summary" id="auto_summary" value="true" {% if form_data.auto_summary %}checked{% endif %} style="width: auto;" />
-        要約
-      </label>
+        <label for="auto_summary" style="font-weight: 600; cursor: pointer;">自動要約</label>
+      </div>
       <div class="actions">
         <button class="primary" type="submit">保存する</button>
       </div>
