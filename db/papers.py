@@ -18,7 +18,7 @@ def list_papers(tag: str = "") -> list[dict[str, Any]]:
         if tag:
             rows = connection.execute(
                 """
-                SELECT id, title, authors, url, memo, tags, created_at, updated_at
+                SELECT id, title, authors, url, memo, summary, tags, created_at, updated_at
                 FROM papers
                 WHERE (',' || tags || ',') LIKE ?
                 ORDER BY created_at DESC, id DESC
@@ -28,7 +28,7 @@ def list_papers(tag: str = "") -> list[dict[str, Any]]:
         else:
             rows = connection.execute(
                 """
-                SELECT id, title, authors, url, memo, tags, created_at, updated_at
+                SELECT id, title, authors, url, memo, summary, tags, created_at, updated_at
                 FROM papers
                 ORDER BY created_at DESC, id DESC
                 """
@@ -50,17 +50,17 @@ def list_all_tags() -> list[str]:
 
 
 def create_paper_record(
-    title: str, authors: str, url: str, memo: str, tags: str
+    title: str, authors: str, url: str, memo: str, tags: str, summary: str = ""
 ) -> int:
     """論文を作成する。"""
     timestamp = utc_now_iso()
     with get_connection() as connection:
         cursor = connection.execute(
             """
-            INSERT INTO papers (title, authors, url, memo, tags, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO papers (title, authors, url, memo, summary, tags, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (title, authors, url, memo, normalize_tags(tags), timestamp, timestamp),
+            (title, authors, url, memo, summary, normalize_tags(tags), timestamp, timestamp),
         )
         connection.commit()
         return int(cursor.lastrowid)
@@ -71,7 +71,7 @@ def get_paper(paper_id: int) -> dict[str, Any]:
     with get_connection() as connection:
         row = connection.execute(
             """
-            SELECT id, title, authors, url, memo, tags, created_at, updated_at
+            SELECT id, title, authors, url, memo, summary, tags, created_at, updated_at
             FROM papers
             WHERE id = ?
             """,

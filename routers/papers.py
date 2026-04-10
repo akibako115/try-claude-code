@@ -41,6 +41,7 @@ def index(request: Request, tag: str = Query("")) -> HTMLResponse:
                 "url": "",
                 "memo": "",
                 "tags": "",
+                "auto_summary": False,
             },
         },
     )
@@ -54,6 +55,7 @@ def create_paper(
     url: str = Form(""),
     memo: str = Form(""),
     tags: str = Form(""),
+    auto_summary: bool = Form(False),
 ) -> HTMLResponse:
     """論文を作成する。"""
     clean_title = title.strip()
@@ -73,17 +75,13 @@ def create_paper(
                 "all_tags": list_all_tags(),
                 "active_tag": "",
                 "error": "タイトルは必須です。",
-                "form_data": form_data,
+                "form_data": {**form_data, "auto_summary": auto_summary},
             },
             status_code=422,
         )
 
-    if not form_data["memo"]:
-        form_data["memo"] = generate_memo(
-            form_data["title"], form_data["authors"], form_data["url"]
-        )
-
-    create_paper_record(**form_data)
+    summary = generate_memo(form_data["title"], form_data["authors"], form_data["url"]) if auto_summary else ""
+    create_paper_record(**form_data, summary=summary)
     return templates.TemplateResponse(
         request,
         "partials/page_content.html",
@@ -98,6 +96,7 @@ def create_paper(
                 "url": "",
                 "memo": "",
                 "tags": "",
+                "auto_summary": False,
             },
         },
     )

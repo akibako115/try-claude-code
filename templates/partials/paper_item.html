@@ -22,6 +22,9 @@
         {% endfor %}
       </p>
       {% endif %}
+      {% if paper.summary %}
+      <p class="meta" style="margin-top: 10px; padding: 10px 12px; background: #f0ebe2; border-radius: 10px; line-height: 1.6; white-space: pre-wrap;">📝 自動要約: {{ paper.summary }}</p>
+      {% endif %}
       <p class="meta">追加日時: {{ paper.created_at }}</p>
       <p class="meta">更新日時: {{ paper.updated_at }}</p>
     </div>

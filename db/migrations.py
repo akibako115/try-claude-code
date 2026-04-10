@@ -4,7 +4,7 @@ import sqlite3
 
 from db.connection import get_connection
 
-LATEST_SCHEMA_VERSION = 2
+LATEST_SCHEMA_VERSION = 3
 
 
 def table_exists(connection: sqlite3.Connection, table_name: str) -> bool:
@@ -47,6 +47,8 @@ def infer_schema_version(connection: sqlite3.Connection) -> int:
         return 0
 
     existing_columns = get_table_columns(connection, "papers")
+    if "summary" in existing_columns:
+        return 3
     if "tags" in existing_columns:
         return 2
     return 1
@@ -90,6 +92,14 @@ def migrate_to_v2(connection: sqlite3.Connection) -> None:
         )
 
 
+def migrate_to_v3(connection: sqlite3.Connection) -> None:
+    """スキーマを v3 に移行する。"""
+    if "summary" not in get_table_columns(connection, "papers"):
+        connection.execute(
+            "ALTER TABLE papers ADD COLUMN summary TEXT NOT NULL DEFAULT ''"
+        )
+
+
 def run_migrations(connection: sqlite3.Connection) -> None:
     """マイグレーションを実行する。"""
     ensure_schema_version_table(connection)
@@ -107,6 +117,11 @@ def run_migrations(connection: sqlite3.Connection) -> None:
         if version == 1:
             migrate_to_v2(connection)
             set_schema_version(connection, 2)
+            continue
+
+        if version == 2:
+            migrate_to_v3(connection)
+            set_schema_version(connection, 3)
             continue
 
         raise RuntimeError(f"Unsupported schema version: {version}")
