@@ -84,8 +84,18 @@
       }
 
       textarea {
-        min-height: 120px;
-        resize: vertical;
+        min-height: 3em;
+        resize: none;
+        overflow: hidden;
+        transition: height 0.15s ease;
+      }
+
+      .toggle-memo {
+        align-self: start;
+        font-size: 0.82rem;
+        padding: 4px 12px;
+        background: #e9eef2;
+        color: #243b53;
       }
 
       .actions {
@@ -234,5 +244,71 @@
   </head>
   <body>
     {% include "partials/page_content.html" %}
+    <script>
+      var COLLAPSE_HEIGHT = 80; // px、約3行分
+
+      function autoResize(el) {
+        el.style.height = 'auto';
+        el.style.height = el.scrollHeight + 'px';
+      }
+
+      function initTextarea(el) {
+        // 既に初期化済みならスキップ
+        if (el.dataset.initialized) return;
+        el.dataset.initialized = '1';
+
+        // 全文の高さを計測
+        el.style.height = 'auto';
+        var fullHeight = el.scrollHeight;
+
+        if (fullHeight <= COLLAPSE_HEIGHT) {
+          // 短いコンテンツ：折りたたみ不要、入力時だけリサイズ
+          el.style.height = fullHeight + 'px';
+          el.addEventListener('input', function() { autoResize(el); });
+          return;
+        }
+
+        // 長いコンテンツ：トグルボタンを追加
+        var label = el.parentNode; // <label>
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'toggle-memo';
+        label.parentNode.insertBefore(btn, label.nextSibling);
+
+        function collapse() {
+          el.style.height = COLLAPSE_HEIGHT + 'px';
+          el.style.overflow = 'hidden';
+          btn.textContent = '全文表示';
+          btn.dataset.expanded = '';
+        }
+
+        function expand() {
+          el.style.overflow = 'hidden';
+          autoResize(el);
+          btn.textContent = '折りたたむ';
+          btn.dataset.expanded = '1';
+        }
+
+        btn.addEventListener('click', function() {
+          btn.dataset.expanded ? collapse() : expand();
+        });
+
+        el.addEventListener('input', function() {
+          if (btn.dataset.expanded) autoResize(el);
+        });
+
+        collapse(); // デフォルトは折りたたみ
+      }
+
+      function initTextareas(root) {
+        root.querySelectorAll('textarea').forEach(initTextarea);
+      }
+
+      initTextareas(document);
+
+      document.addEventListener('htmx:afterSettle', function(e) {
+        initTextareas(e.detail.elt);
+      });
+    </script>
   </body>
 </html>
