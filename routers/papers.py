@@ -12,6 +12,7 @@ from db.papers import (
     update_paper_memo,
     update_paper_tags,
 )
+from services.memo import generate_memo
 
 router = APIRouter()
 templates: Jinja2Templates
@@ -40,6 +41,7 @@ def index(request: Request, tag: str = Query("")) -> HTMLResponse:
                 "url": "",
                 "memo": "",
                 "tags": "",
+                "auto_summary": False,
             },
         },
     )
@@ -53,6 +55,7 @@ def create_paper(
     url: str = Form(""),
     memo: str = Form(""),
     tags: str = Form(""),
+    auto_summary: bool = Form(False),
 ) -> HTMLResponse:
     """論文を作成する。"""
     clean_title = title.strip()
@@ -72,9 +75,14 @@ def create_paper(
                 "all_tags": list_all_tags(),
                 "active_tag": "",
                 "error": "タイトルは必須です。",
-                "form_data": form_data,
+                "form_data": {**form_data, "auto_summary": auto_summary},
             },
             status_code=422,
+        )
+
+    if auto_summary and not form_data["memo"]:
+        form_data["memo"] = generate_memo(
+            form_data["title"], form_data["authors"], form_data["url"]
         )
 
     create_paper_record(**form_data)
@@ -92,6 +100,7 @@ def create_paper(
                 "url": "",
                 "memo": "",
                 "tags": "",
+                "auto_summary": False,
             },
         },
     )
