@@ -17,6 +17,8 @@ This repository contains a small local web app for tracking papers you have read
 - `db/migrations.py`: スキーマバージョン管理・マイグレーション処理、`init_db()`
 - `db/papers.py`: papers テーブルの CRUD 操作（`list_papers`, `create_paper_record`, `get_paper`, `update_paper_memo`, `update_paper_tags`, `delete_paper_record`, `normalize_tags`, `list_all_tags`）
 - `routers/papers.py`: FastAPI ルートハンドラ一式
+- `static/css/style.css`: 全スタイル定義
+- `static/js/main.js`: textarea 自動リサイズ・折りたたみトグルの JS
 - `templates/index.html`: outer HTML shell; includes `partials/page_content.html`
 - `templates/partials/page_content.html`: full page body (add-paper form + paper list); htmx target `#page`
 - `templates/partials/paper_item.html`: single paper card; htmx target `#paper-{{ paper.id }}`
@@ -61,7 +63,7 @@ Validation: `title` must be non-empty; returns 422 with `error` in context other
 - Routes return `HTMLResponse` / `TemplateResponse`; no JSON endpoints.
 - No test suite exists. Verify changes manually by running the app.
 - UI text is in Japanese; keep new UI strings in Japanese.
-- Do not add external CSS/JS frameworks. Styles live inline in `index.html`.
+- Do not add external CSS/JS frameworks. Styles live in `static/css/style.css`; JS lives in `static/js/main.js`.
 
 ## Run
 

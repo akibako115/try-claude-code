@@ -82,6 +82,14 @@ textarea {
   transition: height 0.15s ease;
 }
 
+.toggle-memo {
+  align-self: start;
+  font-size: 0.82rem;
+  padding: 4px 12px;
+  background: #e9eef2;
+  color: #243b53;
+}
+
 .actions {
   display: flex;
   justify-content: flex-end;
@@ -223,12 +231,4 @@ button {
   margin: 0 0 12px;
   font-size: 0.9rem;
   color: #52606d;
-}
-
-.toggle-memo {
-  align-self: start;
-  font-size: 0.82rem;
-  padding: 4px 12px;
-  background: #e9eef2;
-  color: #243b53;
 }
