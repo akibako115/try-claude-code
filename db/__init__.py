@@ -1,3 +1,3 @@
-from db.migrations import init_db
+from db.session import Base, engine, get_db
 
-__all__ = ["init_db"]
+__all__ = ["Base", "engine", "get_db"]

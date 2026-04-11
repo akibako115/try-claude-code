@@ -1,30 +1,39 @@
 # Paper Notes
 
-読んだ論文をローカルで手早く記録するための、最小構成の Web アプリです。
+読んだ論文を記録・管理する Web アプリです。
 
-FastAPI でサーバを立て、SQLite に保存し、UI は HTML と `htmx` で軽く構成しています。
+FastAPI による JSON REST API バックエンドと、SQLAlchemy ORM による多ユーザー対応・PostgreSQL 対応を実装しています。
 
 ## できること
 
-- 論文の登録
-- 登録済み論文の一覧表示
-- 論文ごとのメモ更新
-- 論文の削除
+- ユーザー登録・ログイン（JWT 認証）
+- 論文の登録・一覧表示・削除
+- 論文ごとのメモ更新・タグ管理
+- タグによるフィルタリング
+- OpenAI API を使ったメモの自動生成（オプション）
 
 ## 使用技術
 
 - Python 3
 - FastAPI
-- Jinja2
-- htmx
-- SQLite (`sqlite3`)
+- SQLAlchemy 2.0 (ORM)
+- Alembic (マイグレーション)
+- PostgreSQL / SQLite
+- JWT 認証 (`python-jose`)
 
 ## セットアップ
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python3 -m pip install -r requirements.txt
+pip install -r requirements.txt
+```
+
+`.env` ファイルを作成します。
+
+```bash
+cp .env.example .env
+# SECRET_KEY を安全な値に変更してください
 ```
 
 ## 起動方法
@@ -33,35 +42,46 @@ python3 -m pip install -r requirements.txt
 python3 -m uvicorn app:app --reload
 ```
 
-起動後、ブラウザで以下を開きます。
+起動時に Alembic マイグレーションが自動実行されます。
+
+API ドキュメント: `http://localhost:8000/api/docs`
+
+## データベース設定
+
+デフォルトは SQLite（`papers.db`）です。PostgreSQL を使う場合は `.env` を編集します。
 
 ```text
-http://localhost:8000
+DATABASE_URL=postgresql+psycopg2://<user>:<password>@localhost:5432/paper_notes
 ```
 
-## 保存先
+```bash
+brew services start postgresql
+createdb paper_notes
+```
 
-- SQLite ファイルはリポジトリ直下の `papers.db` に自動作成されます
-- テーブルは初回起動時に自動作成されます
+## API エンドポイント
 
-## 主要ファイル
+| Method | Path | 説明 |
+|--------|------|------|
+| POST | `/api/v1/auth/register` | ユーザー登録 |
+| POST | `/api/v1/auth/login` | ログイン・トークン取得 |
+| GET | `/api/v1/auth/me` | 認証ユーザー情報 |
+| GET | `/api/v1/papers/` | 論文一覧（?tag= でフィルタ） |
+| POST | `/api/v1/papers/` | 論文作成 |
+| GET | `/api/v1/papers/{id}` | 論文取得 |
+| PATCH | `/api/v1/papers/{id}/memo` | メモ更新 |
+| PATCH | `/api/v1/papers/{id}/tags` | タグ更新 |
+| DELETE | `/api/v1/papers/{id}` | 論文削除 |
 
-- `app.py`: FastAPI アプリ本体、ルーティング、SQLite 操作
-- `templates/index.html`: 画面全体のテンプレート
-- `templates/partials/page_content.html`: ページ本体の部分テンプレート
-- `templates/partials/paper_item.html`: 論文カードの部分テンプレート
-- `requirements.txt`: 依存パッケージ
+## 主要ディレクトリ
 
-## 動作確認
-
-以下を確認済みです。
-
-- `GET /` でトップページが `200 OK` を返す
-- 初回アクセス時に `papers.db` と `papers` テーブルが作成される
-- 論文登録エンドポイントが HTML を返し、一覧に反映される
-- `TestClient` による登録、バリデーション、メモ更新、削除の確認
-
-## 補足
-
-- 単一ユーザのローカル利用を想定しています
-- 認証、検索、タグ、書誌情報の自動取得は入っていません
+```
+app.py            # FastAPI アプリ・起動時マイグレーション
+config.py         # pydantic-settings による環境変数管理
+models/           # SQLAlchemy ORM モデル
+schemas/          # Pydantic スキーマ
+repositories/     # DB アクセス層
+services/         # ビジネスロジック層
+routers/          # ルートハンドラ
+alembic/          # マイグレーション
+```
