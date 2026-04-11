@@ -2,7 +2,7 @@
 
 読んだ論文を記録・管理する Web アプリです。
 
-FastAPI による JSON REST API バックエンドと、SQLAlchemy ORM による多ユーザー対応・PostgreSQL 対応を実装しています。
+FastAPI JSON REST API バックエンド + React (Vite + TypeScript) SPA フロントエンドで構成しています。
 
 ## できること
 
@@ -14,37 +14,60 @@ FastAPI による JSON REST API バックエンドと、SQLAlchemy ORM による
 
 ## 使用技術
 
-- Python 3
-- FastAPI
-- SQLAlchemy 2.0 (ORM)
-- Alembic (マイグレーション)
+**バックエンド**
+- Python 3 / FastAPI
+- SQLAlchemy 2.0 / Alembic
 - PostgreSQL / SQLite
 - JWT 認証 (`python-jose`)
 
+**フロントエンド**
+- React 18 + TypeScript
+- Vite
+- TanStack Query v5
+- axios
+- react-router-dom v7
+
 ## セットアップ
+
+### バックエンド
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-```
-
-`.env` ファイルを作成します。
-
-```bash
 cp .env.example .env
 # SECRET_KEY を安全な値に変更してください
 ```
 
-## 起動方法
+### フロントエンド
 
 ```bash
-python3 -m uvicorn app:app --reload
+cd frontend
+npm install
 ```
 
-起動時に Alembic マイグレーションが自動実行されます。
+## 起動方法
 
-API ドキュメント: `http://localhost:8000/api/docs`
+### 開発時（バックエンド + フロントエンド別々に起動）
+
+```bash
+# バックエンド（ポート 8000）
+python3 -m uvicorn app:app --reload
+
+# フロントエンド（別ターミナル、ポート 5173）
+cd frontend && npm run dev
+```
+
+起動後: `http://localhost:5173`
+
+### 本番ビルド
+
+```bash
+cd frontend && npm run build
+python3 -m uvicorn app:app
+```
+
+`frontend/dist` が存在する場合、バックエンドが SPA を配信します。起動後: `http://localhost:8000`
 
 ## データベース設定
 
@@ -59,29 +82,24 @@ brew services start postgresql
 createdb paper_notes
 ```
 
-## API エンドポイント
-
-| Method | Path | 説明 |
-|--------|------|------|
-| POST | `/api/v1/auth/register` | ユーザー登録 |
-| POST | `/api/v1/auth/login` | ログイン・トークン取得 |
-| GET | `/api/v1/auth/me` | 認証ユーザー情報 |
-| GET | `/api/v1/papers/` | 論文一覧（?tag= でフィルタ） |
-| POST | `/api/v1/papers/` | 論文作成 |
-| GET | `/api/v1/papers/{id}` | 論文取得 |
-| PATCH | `/api/v1/papers/{id}/memo` | メモ更新 |
-| PATCH | `/api/v1/papers/{id}/tags` | タグ更新 |
-| DELETE | `/api/v1/papers/{id}` | 論文削除 |
+起動時に Alembic マイグレーションが自動実行されます。
 
 ## 主要ディレクトリ
 
 ```
 app.py            # FastAPI アプリ・起動時マイグレーション
-config.py         # pydantic-settings による環境変数管理
+config.py         # 環境変数管理
 models/           # SQLAlchemy ORM モデル
 schemas/          # Pydantic スキーマ
 repositories/     # DB アクセス層
 services/         # ビジネスロジック層
-routers/          # ルートハンドラ
+routers/          # API ルートハンドラ
 alembic/          # マイグレーション
+frontend/
+  src/
+    api/          # axios クライアント・API 呼び出し
+    context/      # AuthContext（JWT・ログイン状態管理）
+    hooks/        # TanStack Query フック
+    components/   # UI コンポーネント
+    pages/        # ページコンポーネント
 ```
