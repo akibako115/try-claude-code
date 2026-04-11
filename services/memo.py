@@ -1,11 +1,6 @@
 from __future__ import annotations
 
-import os
-
-from dotenv import load_dotenv
 from openai import OpenAI
-
-load_dotenv()
 
 _SYSTEM_PROMPT = """あなたは機械学習・AI分野の論文を日本語で解説するアシスタントです。
 論文のタイトル・著者・URLをもとに、以下の構成で論文を解説してください。
@@ -31,12 +26,11 @@ URLが論文ページ（arXivなど）であればその内容も参照してく
 （手法の制約・失敗ケース・著者が言及する今後の課題を説明する）"""
 
 
-def generate_memo(title: str, authors: str, url: str) -> str:
+def generate_memo(title: str, authors: str, url: str, api_key: str) -> str:
     """ChatGPT API を使って論文のメモを自動生成する。
 
-    API キーが未設定またはダミーの場合は空文字を返す。
+    api_key が未設定またはダミーの場合は空文字を返す。
     """
-    api_key = os.getenv("OPENAI_API_KEY", "")
     if not api_key or api_key.startswith("sk-dummy"):
         return ""
 
