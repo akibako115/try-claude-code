@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
@@ -20,10 +19,9 @@ import models  # noqa: E402, F401 — User / Paper を Base.metadata に登録
 
 target_metadata = Base.metadata
 
-# DATABASE_URL 環境変数で上書き可能
-database_url = os.getenv("DATABASE_URL")
-if database_url:
-    config.set_main_option("sqlalchemy.url", database_url)
+# pydantic-settings 経由で DATABASE_URL を一元管理
+from config import get_settings  # noqa: E402
+config.set_main_option("sqlalchemy.url", get_settings().database_url)
 
 
 def run_migrations_offline() -> None:
