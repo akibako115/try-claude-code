@@ -10,6 +10,7 @@ interface Props {
 
 export default function MemoEditor({ paperId, initialMemo }: Props) {
   const [memo, setMemo] = useState(initialMemo)
+  const [isDirty, setIsDirty] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const [needsCollapse, setNeedsCollapse] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -17,8 +18,8 @@ export default function MemoEditor({ paperId, initialMemo }: Props) {
   const { mutate, isPending } = useUpdateMemo(paperId)
 
   useEffect(() => {
-    setMemo(initialMemo)
-  }, [initialMemo])
+    if (!isDirty) setMemo(initialMemo)
+  }, [initialMemo, isDirty])
 
   useEffect(() => {
     const el = textareaRef.current
@@ -31,7 +32,7 @@ export default function MemoEditor({ paperId, initialMemo }: Props) {
     } else {
       el.style.height = `${full}px`
     }
-  }, [])
+  }, [initialMemo])
 
   const autoResize = () => {
     const el = textareaRef.current
@@ -43,6 +44,7 @@ export default function MemoEditor({ paperId, initialMemo }: Props) {
   const handleSave = () => {
     mutate({ memo }, {
       onSuccess: () => {
+        setIsDirty(false)
         setSaved(true)
         setTimeout(() => setSaved(false), 2000)
       },
@@ -54,7 +56,7 @@ export default function MemoEditor({ paperId, initialMemo }: Props) {
       <textarea
         ref={textareaRef}
         value={memo}
-        onChange={(e) => { setMemo(e.target.value); autoResize() }}
+        onChange={(e) => { setMemo(e.target.value); setIsDirty(true); autoResize() }}
         className={collapsed ? 'memo-collapsed' : ''}
         rows={3}
         placeholder="メモを入力..."

@@ -19,7 +19,9 @@ export default function PaperCard({ paper, onTagClick }: Props) {
 
   const handleDelete = () => {
     if (window.confirm(`「${paper.title}」を削除しますか？`)) {
-      deletePaper(paper.id)
+      deletePaper(paper.id, {
+        onError: () => alert('削除に失敗しました。'),
+      })
     }
   }
 
