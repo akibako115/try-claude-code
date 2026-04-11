@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import logging
+
 from openai import OpenAI
+
+logger = logging.getLogger(__name__)
 
 _SYSTEM_PROMPT = """あなたは機械学習・AI分野の論文を日本語で解説するアシスタントです。
 論文のタイトル・著者・URLをもとに、以下の構成で論文を解説してください。
@@ -54,5 +58,6 @@ def generate_memo(title: str, authors: str, url: str, api_key: str) -> str:
             timeout=30,
         )
         return response.choices[0].message.content or ""
-    except Exception:
+    except Exception as e:
+        logger.warning("OpenAI API 呼び出しに失敗しました: %s", e)
         return ""

@@ -19,5 +19,9 @@ papers.db
 .claude/agents/
 claude-agents/
 
+# Frontend build artifacts (committed only from refactor/frontend branch)
+frontend/node_modules/
+frontend/dist/
+
 # macOS
 .DS_Store

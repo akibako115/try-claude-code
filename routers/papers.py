@@ -20,10 +20,6 @@ from services.paper_service import PaperService
 router = APIRouter()
 
 
-def _svc(db: Session, settings: Settings) -> PaperService:
-    return PaperService(db, settings)
-
-
 @router.get("/", response_model=PaperListOut)
 def list_papers(
     tag: str = Query(""),
@@ -32,7 +28,7 @@ def list_papers(
     settings: Settings = Depends(get_settings),
 ) -> PaperListOut:
     """ログイン中ユーザーの論文一覧を返す。タグでフィルタ可能。"""
-    return _svc(db, settings).list_papers(current_user.id, tag)
+    return PaperService(db, settings).list_papers(current_user.id, tag)
 
 
 @router.post("/", response_model=PaperOut, status_code=201)
@@ -43,7 +39,7 @@ def create_paper(
     settings: Settings = Depends(get_settings),
 ) -> PaperOut:
     """論文を新規作成する。"""
-    return _svc(db, settings).create_paper(current_user.id, data)
+    return PaperService(db, settings).create_paper(current_user.id, data)
 
 
 @router.get("/{paper_id}", response_model=PaperOut)
@@ -54,7 +50,7 @@ def get_paper(
     settings: Settings = Depends(get_settings),
 ) -> PaperOut:
     """指定した論文を取得する。"""
-    return _svc(db, settings).get_paper(current_user.id, paper_id)
+    return PaperService(db, settings).get_paper(current_user.id, paper_id)
 
 
 @router.patch("/{paper_id}/memo", response_model=PaperOut)
@@ -66,7 +62,7 @@ def update_memo(
     settings: Settings = Depends(get_settings),
 ) -> PaperOut:
     """論文のメモを更新する。"""
-    return _svc(db, settings).update_memo(current_user.id, paper_id, data)
+    return PaperService(db, settings).update_memo(current_user.id, paper_id, data)
 
 
 @router.patch("/{paper_id}/tags", response_model=PaperOut)
@@ -78,7 +74,7 @@ def update_tags(
     settings: Settings = Depends(get_settings),
 ) -> PaperOut:
     """論文のタグを更新する。"""
-    return _svc(db, settings).update_tags(current_user.id, paper_id, data)
+    return PaperService(db, settings).update_tags(current_user.id, paper_id, data)
 
 
 @router.delete("/{paper_id}", status_code=204)
@@ -89,5 +85,5 @@ def delete_paper(
     settings: Settings = Depends(get_settings),
 ) -> Response:
     """論文を削除する。"""
-    _svc(db, settings).delete_paper(current_user.id, paper_id)
+    PaperService(db, settings).delete_paper(current_user.id, paper_id)
     return Response(status_code=204)

@@ -9,6 +9,11 @@ def _normalize_tags(tags_str: str) -> str:
     return ",".join(t.strip() for t in tags_str.split(",") if t.strip())
 
 
+def _escape_like(value: str) -> str:
+    """LIKE 演算子の特殊文字（% と _）をエスケープする。"""
+    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
 class PaperRepo:
     def __init__(self, db: Session) -> None:
         self._db = db
@@ -16,7 +21,13 @@ class PaperRepo:
     def list_by_user(self, user_id: int, tag: str = "") -> list[Paper]:
         q = self._db.query(Paper).filter(Paper.user_id == user_id)
         if tag:
-            q = q.filter(Paper.tags.like(f"%,{tag},%") | Paper.tags.like(f"{tag},%") | Paper.tags.like(f"%,{tag}") | (Paper.tags == tag))
+            escaped = _escape_like(tag)
+            q = q.filter(
+                Paper.tags.like(f"%,{escaped},%", escape="\\")
+                | Paper.tags.like(f"{escaped},%", escape="\\")
+                | Paper.tags.like(f"%,{escaped}", escape="\\")
+                | (Paper.tags == tag)
+            )
         return q.order_by(Paper.created_at.desc(), Paper.id.desc()).all()
 
     def list_all_tags_by_user(self, user_id: int) -> list[str]:

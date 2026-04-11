@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,6 +17,19 @@ from routers import papers as papers_router
 BASE_DIR = Path(__file__).resolve().parent
 
 
+def _init_db() -> None:
+    """テーブルが存在しない場合に自動作成する（Alembic 未使用時のフォールバック）。"""
+    import models  # noqa: F401 — User / Paper を Base.metadata に登録
+    Base.metadata.create_all(bind=engine)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """アプリケーションのライフサイクル管理。"""
+    _init_db()
+    yield
+
+
 def create_app() -> FastAPI:
     settings = get_settings()
 
@@ -24,14 +39,15 @@ def create_app() -> FastAPI:
         docs_url="/api/docs",
         redoc_url="/api/redoc",
         openapi_url="/api/openapi.json",
+        lifespan=lifespan,
     )
 
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[settings.frontend_origin, "http://localhost:5173"],
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type"],
     )
 
     app.include_router(auth_router.router, prefix="/api/v1/auth", tags=["auth"])
@@ -49,17 +65,4 @@ def create_app() -> FastAPI:
     return app
 
 
-def _init_db() -> None:
-    """テーブルが存在しない場合に自動作成する（Alembic 未使用時のフォールバック）。"""
-    # models を import して Base.metadata に登録する
-    import models  # noqa: F401
-    Base.metadata.create_all(bind=engine)
-
-
 app = create_app()
-
-
-@app.on_event("startup")
-def on_startup() -> None:
-    """アプリケーション起動時にデータベーステーブルを確認・作成する。"""
-    _init_db()
