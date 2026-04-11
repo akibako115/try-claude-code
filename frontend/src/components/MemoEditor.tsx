@@ -15,13 +15,18 @@ export default function MemoEditor({ paperId, initialMemo }: Props) {
   const [needsCollapse, setNeedsCollapse] = useState(false)
   const [saved, setSaved] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const collapseInitialized = useRef(false)
   const { mutate, isPending } = useUpdateMemo(paperId)
 
   useEffect(() => {
     if (!isDirty) setMemo(initialMemo)
   }, [initialMemo, isDirty])
 
+  // memo state（DOMに反映済みの値）を使って初回のみ折りたたみ判定を行う。
+  // initialMemo に依存すると setMemo の再レンダリング前に scrollHeight を測定してしまうため、
+  // 実際のテキストが反映された後に一度だけ実行する。
   useEffect(() => {
+    if (collapseInitialized.current || !memo) return
     const el = textareaRef.current
     if (!el) return
     el.style.height = 'auto'
@@ -32,7 +37,8 @@ export default function MemoEditor({ paperId, initialMemo }: Props) {
     } else {
       el.style.height = `${full}px`
     }
-  }, [initialMemo])
+    collapseInitialized.current = true
+  }, [memo])
 
   const autoResize = () => {
     const el = textareaRef.current
