@@ -17,7 +17,7 @@ FastAPI でサーバを立て、SQLite に保存し、UI は HTML と `htmx` で
 - FastAPI
 - Jinja2
 - htmx
-- SQLite (`sqlite3`)
+- PostgreSQL (`psycopg2`) / SQLite (`sqlite3`)
 
 ## セットアップ
 
@@ -41,8 +41,24 @@ http://localhost:8000
 
 ## 保存先
 
-- SQLite ファイルはリポジトリ直下の `papers.db` に自動作成されます
+- PostgreSQL を使う場合は `.env` の `DATABASE_URL` に接続先を設定します
+- SQLite を使う場合は `DATABASE_URL` を未設定にすると、リポジトリ直下の `papers.db` が使われます
 - テーブルは初回起動時に自動作成されます
+
+## PostgreSQL 利用時の手順
+
+`.env` に以下を設定します。
+
+```text
+DATABASE_URL=postgresql+psycopg2://postgres:postgres@localhost:5432/paper_notes
+```
+
+ローカル PostgreSQL を起動していない場合は先に起動してください（例: Homebrew）。
+
+```bash
+brew services start postgresql
+createdb paper_notes
+```
 
 ## 主要ファイル
 
