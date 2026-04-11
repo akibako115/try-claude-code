@@ -8,6 +8,12 @@ interface Props {
   onTagClick: (tag: string) => void
 }
 
+const formatDate = (iso: string) =>
+  new Date(iso).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
+
+const isSafeUrl = (url: string) =>
+  url.startsWith('http://') || url.startsWith('https://')
+
 export default function PaperCard({ paper, onTagClick }: Props) {
   const { mutate: deletePaper } = useDeletePaper()
 
@@ -17,9 +23,6 @@ export default function PaperCard({ paper, onTagClick }: Props) {
     }
   }
 
-  const date = (iso: string) =>
-    new Date(iso).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
-
   return (
     <div className="card">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -27,9 +30,10 @@ export default function PaperCard({ paper, onTagClick }: Props) {
           <div className="paper-title">{paper.title}</div>
           <div className="paper-meta">
             {paper.authors && <span>{paper.authors} · </span>}
-            {paper.url && <a href={paper.url} target="_blank" rel="noreferrer">{paper.url}</a>}
+            {paper.url && isSafeUrl(paper.url) && <a href={paper.url} target="_blank" rel="noreferrer">{paper.url}</a>}
+            {paper.url && !isSafeUrl(paper.url) && <span>{paper.url}</span>}
             {(paper.authors || paper.url) && <span> · </span>}
-            <span>登録: {date(paper.created_at)}</span>
+            <span>登録: {formatDate(paper.created_at)}</span>
           </div>
         </div>
         <button className="btn-danger btn-sm" onClick={handleDelete}>削除</button>

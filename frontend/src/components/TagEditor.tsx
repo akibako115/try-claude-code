@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useUpdateTags } from '../hooks/usePapers'
 
 interface Props {
@@ -10,6 +10,10 @@ export default function TagEditor({ paperId, initialTags }: Props) {
   const [tags, setTags] = useState(initialTags)
   const [saved, setSaved] = useState(false)
   const { mutate, isPending } = useUpdateTags(paperId)
+
+  useEffect(() => {
+    setTags(initialTags)
+  }, [initialTags])
 
   const handleSave = () => {
     mutate({ tags }, {

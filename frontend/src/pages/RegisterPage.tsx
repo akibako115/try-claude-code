@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
 
 export default function RegisterPage() {
@@ -21,7 +22,7 @@ export default function RegisterPage() {
       await register({ email, username, password })
       navigate('/')
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      const msg = axios.isAxiosError(err) ? err.response?.data?.detail : undefined
       setError(msg ?? '登録に失敗しました。')
     } finally {
       setLoading(false)
